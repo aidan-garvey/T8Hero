@@ -31,15 +31,13 @@ midimsgs = {x: mido.Message('note_on', channel=CHANNEL, note=midinotes[x]) for x
 bass_msg = mido.Message('note_on', channel=CHANNEL, note=t8notes['BASS DRUM'])
 
 for event in guitar.read_loop():
-    if event.value != 0:
-        if event.code == STRUM_DOWN:
+    if event.value != 0 and (event.code == STRUM_DOWN or event.code == STRUM_UP):
+        sent = 0
+        for keycode in guitar.active_keys():
+            msg = midimsgs.get(keycode)
+            if msg is not None:
+                sent += 1
+                midiport.send(msg)
+        # if no instruments are being held, use bass by default
+        if sent == 0:
             midiport.send(bass_msg)
-        elif event.code == STRUM_UP:
-            sent = 0
-            for keycode in guitar.active_keys():
-                msg = midimsgs.get(keycode)
-                if msg is not None:
-                    sent += 1
-                    midiport.send(msg)
-            if sent == 0:
-                midiport.send(bass_msg)
