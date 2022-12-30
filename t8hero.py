@@ -27,9 +27,12 @@ t8notes = button2midi.get_t8_map()
 for event in guitar.read_loop():
     # if event.type == ecodes.EV_BTN:
     if event.code == STRUM_DOWN:
-        midiport.send(mido.Message('note_on', note=t8notes['BASS DRUM']))
+        print("strum down, sending bass drum note")
+        midiport.send(mido.Message('note_on', channel=10, note=t8notes['BASS DRUM']))
     elif event.code == STRUM_UP:
+        print("strum up")
         for keycode in guitar.active_keys():
             note = midinotes.get(keycode)
             if note is not None:
-                midiport.send(mido.Mesage('note_on', note=note))
+                print("sending", note)
+                midiport.send(mido.Mesage('note_on', channel=10, note=note))
