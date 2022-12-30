@@ -35,4 +35,4 @@ for event in guitar.read_loop():
             note = midinotes.get(keycode)
             if note is not None:
                 print("sending", note)
-                midiport.send(mido.Mesage('note_on', channel=10, note=note))
+                midiport.send(mido.Message('note_on', channel=10, note=note))
