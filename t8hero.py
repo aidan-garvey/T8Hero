@@ -6,6 +6,7 @@ import button2midi
 
 STRUM_UP = ecodes.BTN_MODE
 STRUM_DOWN = ecodes.BTN_THUMBL
+CHANNEL = 9 # t-8 uses channel 10 (1-indexed), mido is 0-indexed
 
 mido.set_backend('mido.backends.rtmidi')
 
@@ -18,21 +19,27 @@ if midiport is None:
     print("Error: midi output device not found")
     exit()
 
+print(midiport)
+
 guitar = InputDevice('/dev/input/event9')
 print(guitar)
 
 midinotes = button2midi.get_midi_map()
 t8notes = button2midi.get_t8_map()
+# map button codes to mido messages
+midimsgs = {x: mido.Message('note_on', channel=CHANNEL, note=midinotes[x]) for x in midinotes.keys()}
+bass_msg = mido.Message('note_on', channel=CHANNEL, note=t8notes['BASS DRUM'])
 
 for event in guitar.read_loop():
-    # if event.type == ecodes.EV_BTN:
-    if event.code == STRUM_DOWN:
-        print("strum down, sending bass drum note")
-        midiport.send(mido.Message('note_on', channel=10, note=t8notes['BASS DRUM']))
-    elif event.code == STRUM_UP:
-        print("strum up")
-        for keycode in guitar.active_keys():
-            note = midinotes.get(keycode)
-            if note is not None:
-                print("sending", note)
-                midiport.send(mido.Message('note_on', channel=10, note=note))
+    if event.value != 0:
+        if event.code == STRUM_DOWN:
+            midiport.send(bass_msg)
+        elif event.code == STRUM_UP:
+            sent = 0
+            for keycode in guitar.active_keys():
+                msg = midimsgs.get(keycode)
+                if msg is not None:
+                    sent += 1
+                    midiport.send(msg)
+            if sent == 0:
+                midiport.send(bass_msg)
